@@ -69,3 +69,16 @@ Contributions are welcome! Please submit a pull request or open an issue for any
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more details.
+
+## Creating tag
+
+```bash
+# 1. Check existing tags
+git tag
+# 2. Create a valid tag
+git tag -a v1.0.0 -m "Release version 1.0.0"
+# or lightweight tag
+git tag v1.0.0
+# push tag to remote
+git push origin v1.0.0
+```
