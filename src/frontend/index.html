@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Unicode Invisible Cleaner</title>
+        <link rel="stylesheet" 
+            href="{{ url_for('static', filename='style.css')}}">
+    </head>
+    <body>
+        <h1>Unicode Invisible Cleaner</h1>
+        <div class="container">
+            <div class="pane">
+                <h2>Input Text / Code</h2>
+                <textarea id="inputText" 
+                    placeholder="Paste your text/code here..."></textarea>
+                <button id="processBtn">Process</button>
+            </div>
+
+            <div class="pane">
+                <h2>Detected Invisible Characters</h2>
+                <div id="detectedText" class="output"></div>
+            </div>
+
+            <div class="pane">
+                <h2>Cleaned Text</h2>
+                <div id="cleanedText" class="output"></div>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='script.js')}}"
+        ></script>
+    </body>
+</html>

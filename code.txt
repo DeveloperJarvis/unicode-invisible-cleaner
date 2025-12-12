@@ -1,0 +1,569 @@
+src\unicode_invisible_cleaner\__init__.py:
+
+"""
+This package provides functionality for detecting and removing invisible Unicode text characters.
+"""
+
+from .detector import InvisibleTextDetector
+from .cleaner import InvisibleTextRemover
+from .normalizer import InputProcessor
+from .api import detect_invisible, clean_invisible, detect_and_clean
+# from .utils import some_utility_function  # Example utility function import
+from .utils import remove_invisible_unicode, is_invisible_unicode, detect_invisible_unicode
+from .types import UnicodeCharDef, DetectedItem, DetectionReport  # Example type imports
+
+__all__ = [
+    "InvisibleTextDetector",
+    "InvisibleTextRemover",
+    "InputProcessor",
+    "detect_invisible",
+    "clean_invisible",
+    "detect_and_clean",
+    "remove_invisible_unicode",
+    "is_invisible_unicode",
+    "detect_invisible_unicode",
+    "UnicodeCharDef",
+    "DetectedItem",
+    "DetectionReport",
+]
+
+
+src\unicode_invisible_cleaner\api.py:
+from .detector import InvisibleTextDetector
+from .cleaner import InvisibleTextRemover
+
+def detect_invisible(text):
+    # Implement detection logic for invisible Unicode characters
+    detector = InvisibleTextDetector()
+    return detector.detect(text)
+
+def clean_invisible(text):
+    # Implement cleaning logic to remove invisible Unicode characters
+    remover = InvisibleTextRemover()
+    return remover.clean(text)
+
+def detect_and_clean(text):
+    detected = detect_invisible(text)
+    cleaned = clean_invisible(text)
+    return detected, cleaned
+
+
+src\unicode_invisible_cleaner\cleaner.py:
+from config import INVISIBLE_CHARS
+
+class InvisibleTextRemover:
+    def __init__(self, rules=None):
+        self.rules = rules if rules is not None else []
+
+    def remove_invisible_characters(self, text):
+        if self.rules:
+            for rule in self.rules:
+                text = rule.apply(text)
+        for ch in self.INVISIBLE_CHARS:
+            text = text.replace(ch, '')
+        return text
+
+    def clean(self, text):
+        """Public API exptected by api.py"""
+        return self.remove_invisible_characters(text)
+    
+    def add_rule(self, rule):
+        self.rules.append(rule)
+
+    def clear_rules(self):
+        self.rules.clear()
+    
+    def remove(self, text):
+        """Public method expected by tests."""
+        return self.remove_invisible_characters(text)
+
+
+src\unicode_invisible_cleaner\old_cli.py:
+# CLI for Invisible Unicode Cleaner
+
+import argparse
+from unicode_invisible_cleaner.api import detect_invisible, clean_invisible
+
+def main():
+    parser = argparse.ArgumentParser(description="Invisible Unicode Cleaner")
+    parser.add_argument("text", type=str, help="Text to process")
+    parser.add_argument("--clean", action="store_true", help="Remove invisible characters from the text")
+    parser.add_argument("--detect", action="store_true", help="Detect invisible characters in the text")
+    
+    args = parser.parse_args()
+
+    if args.detect:
+        detected = detect_invisible(args.text)
+        print("Detected invisible characters:", detected)
+    
+    if args.clean:
+        cleaned_text = clean_invisible(args.text)
+        print("Cleaned text:", cleaned_text)
+
+if __name__ == "__main__":
+    main()
+
+src\unicode_invisible_cleaner\detector.py:
+from config import INVISIBLE_CHARS
+
+class InvisibleTextDetector:
+    def __init__(self):
+        self.invisible_characters = self.load_invisible_characters()
+
+    def load_invisible_characters(self):
+        # Load a set of invisible Unicode characters
+        return INVISIBLE_CHARS
+
+    def detect(self, text, with_positions=False):
+        """Return only invisible characters, not (index, char)."""
+        if with_positions:
+                detected = []
+                for index, char in enumerate(text):
+                    if char in self.invisible_characters:
+                        detected.append((index, char))
+                return detected
+        return [char for char in text if char in self.invisible_characters]
+
+    def report(self, text):
+        detected_items = self.detect(text)
+        return {
+            'text': text,
+            'detected': detected_items,
+            'count': len(detected_items)
+        }
+
+
+src\unicode_invisible_cleaner\normalizer.py:
+class InputProcessor:
+    # def __init__(self, text):
+    #     self.text = text
+
+    # def normalize(self):
+    #     self.text = self._remove_unwanted_characters(self.text)
+    #     self.text = self._ensure_consistent_encoding(self.text)
+    #     return self.text
+
+    # def _remove_unwanted_characters(self, text):
+    #     # Implement logic to remove unwanted characters
+    #     return text
+
+    # def _ensure_consistent_encoding(self, text):
+    #     # Implement logic to ensure consistent encoding
+    #     return text
+
+    def __init__(self):
+        pass
+
+    def normalize(self, text: str) -> str:
+        """Minimal behaviour expected by tests."""
+        return text.strip()
+    
+    def process(self, text: str) -> str:
+        """Alias for normalize(), required by tests."""
+        return self.normalize(text)
+
+
+
+src\unicode_invisible_cleaner\unicode_types.py:
+class UnicodeCharDef:
+    def __init__(self, character: str, code_point: int):
+        self.character = character
+        self.code_point = code_point
+
+class DetectedItem:
+    def __init__(self, char_def: UnicodeCharDef, position: int):
+        self.char_def = char_def
+        self.position = position
+
+class DetectionReport:
+    def __init__(self):
+        self.detected_items = []
+
+    def add_item(self, item: DetectedItem):
+        self.detected_items.append(item)
+
+    def summary(self):
+        return {
+            "total_detected": len(self.detected_items),
+            "items": [(item.char_def.character, item.position) for item in self.detected_items]
+        }
+
+
+src\unicode_invisible_cleaner\utils.py:
+def remove_invisible_unicode(text):
+    invisible_chars = [
+        '\u200B',  # Zero Width Space
+        '\u200C',  # Zero Width Non-Joiner
+        '\u200D',  # Zero Width Joiner
+        '\u2060',  # Word Joiner
+        '\uFEFF',  # Zero Width No-Break Space
+    ]
+    for char in invisible_chars:
+        text = text.replace(char, '')
+    return text
+
+def is_invisible_unicode(char):
+    return char in [
+        '\u200B',  # Zero Width Space
+        '\u200C',  # Zero Width Non-Joiner
+        '\u200D',  # Zero Width Joiner
+        '\u2060',  # Word Joiner
+        '\uFEFF',  # Zero Width No-Break Space
+    ]
+
+def detect_invisible_unicode(text):
+    return [char for char in text if is_invisible_unicode(char)]
+
+
+
+src\unicode_invisible_cleaner\algorithm\__init__.py:
+# This file is intentionally left blank.
+
+src\unicode_invisible_cleaner\algorithm\regex_map.py:
+# regex_map.py
+
+import re
+
+# Regex patterns for detecting invisible Unicode characters
+INVISIBLE_CHARACTERS_REGEX = re.compile(
+    r'[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]'
+)
+
+def find_invisible_characters(text):
+    """
+    Returns a list of invisible characters found in the given text.
+    """
+    return INVISIBLE_CHARACTERS_REGEX.findall(text)
+
+def remove_invisible_characters(text):
+    """
+    Removes invisible characters from the given text.
+    """
+    return INVISIBLE_CHARACTERS_REGEX.sub('', text)
+
+
+src\unicode_invisible_cleaner\algorithm\trie.py:
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.is_end_of_character = False
+
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, character):
+        node = self.root
+        for char in character:
+            if char not in node.children:
+                node.children[char] = TrieNode()
+            node = node.children[char]
+        node.is_end_of_character = True
+
+    def search(self, character):
+        node = self.root
+        for char in character:
+            if char not in node.children:
+                return False
+            node = node.children[char]
+        return node.is_end_of_character
+
+    def starts_with(self, prefix):
+        node = self.root
+        for char in prefix:
+            if char not in node.children:
+                return False
+            node = node.children[char]
+        return True
+
+    def delete(self, character):
+        def _delete(node, char, depth):
+            if not node:
+                return None
+
+            if depth == len(char):
+                if node.is_end_of_character:
+                    node.is_end_of_character = False
+                if not node.children:
+                    return None
+                return node
+
+            char_index = char[depth]
+            node.children[char_index] = _delete(node.children.get(char_index), char, depth + 1)
+
+            if not node.children and not node.is_end_of_character:
+                return None
+            return node
+
+        _delete(self.root, character, 0)
+
+
+examples\sample_usage.py:
+# Example usage of the Unicode Invisible Cleaner library
+
+from unicode_invisible_cleaner.api import detect_invisible, clean_invisible
+
+def main():
+    # Sample text with invisible Unicode characters
+    sample_text = "Hello, World! \u200B\u200CThis is a test string with invisible characters."
+
+    # Detect invisible characters
+    detected_items = detect_invisible(sample_text)
+    print("Detected Invisible Characters:")
+    for item in detected_items:
+        print(f"Character: {item['character']} at position {item['position']}")
+
+    # Clean the text by removing invisible characters
+    cleaned_text = clean_invisible(sample_text)
+    print("\nCleaned Text:")
+    print(cleaned_text)
+
+if __name__ == "__main__":
+    main()
+
+
+src\unicode_invisible_cleaner\run_from_file.py
+
+from unicode_invisible_cleaner.api import detect_invisible, clean_invisible
+
+def run_from_file(input_file):
+    # Read text from input file
+    with open(input_file, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    # Detect invisible characters
+    detected_characters = detect_invisible(text)
+    print("Detected Invisible Characters:")
+    print(detected_characters)
+
+    # clean the text
+    cleaned = clean_invisible(text)
+    print("\nCleaned Text:")
+    print(cleaned)
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) != 2:
+        print("Usage: python run_from_file.py <input_file>")
+    else:
+        run_from_file(sys.argv[1])
+
+src\unicode_invisible_cleaner\cli.py:
+# CLI for Invisible Unicode Cleaner
+
+import argparse
+from unicode_invisible_cleaner.detector import InvisibleTextDetector
+from unicode_invisible_cleaner.cleaner import InvisibleTextRemover
+from unicode_invisible_cleaner.normalizer import InputProcessor
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Invisible Unicode Cleaner"
+    )
+    parser.add_argument("text", type=str, help="Text to process")
+    parser.add_argument(
+        "--clean", action="store_true", help="Remove invisible characters for the text"
+    )
+    parser.add_argument(
+        "--detect", action="store_true", help="Detect invisible characters in the text"
+    )
+
+    args = parser.parse_args()
+
+    detector = InvisibleTextDetector()
+    cleaner = InvisibleTextRemover()
+    normalizer = InputProcessor()
+
+    # Normaliza input
+    normalized_text = normalizer.process(args.text)
+
+    if args.detect:
+        # Detect invisible characters with positions
+        dectected_items = [(i, char) for i, char in 
+                        enumerate(normalized_text) if char in
+                        detector.invisible_characters]
+        print("Detected Invisible Characters:")
+        for pos, char in dectected_items:
+            print(f"Character: {repr(char)} at position {pos}")
+        print(f"Total detected: {len(dectected_items)}\n")
+
+        # Clean text
+        cleaned_text = cleaner.clean(normalized_text)
+        print("Cleaned Text:")
+        print(cleaned_text)
+
+if __name__ == "__main__":
+    main()
+
+
+src\frontend\static\script.js:
+document.getElementById('processBtn').addEventListener('click', function () {
+    const text = document.getElementById('inputText').value;
+
+    fetch("/process", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/www-form-urlencoded"
+        },
+        body: "text=" + encodeURIComponent(text)
+    })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("detectedText").innerHTML = data.highlighted;
+            document.getElementById("cleanedText").innerHTML = data.cleaned;
+        });
+});
+
+
+src\frontend\static\style.css:
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+}
+
+.pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+textarea {
+    width: 100%;
+    height: 300px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 14px;
+}
+
+.output {
+    width: 100%;
+    min-height: 300px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 14px;
+}
+
+.highlight {
+    background-color: yellow;
+    border: 1px solid orange;
+}
+
+src\frontend\index.html:
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <time>Unicode Invisible Cleaner</time>
+        <link rel="stylesheet" 
+            href="{{ url_for('static', filename='style.css')}}">
+    </head>
+    <body>
+        <h1>Unicode Invisible Cleaner</h1>
+        <div class="container">
+            <div class="pane">
+                <h2>Input Text / Code</h2>
+                <textarea id="inputText" 
+                    placeholder="Paste your text/code here..."></textarea>
+                <button id="processBtn">Process</button>
+            </div>
+
+            <div class="pane">
+                <h2>Detected Invisible Characters</h2>
+                <div id="detectText" class="output"></div>
+            </div>
+
+            <div class="pane">
+                <h2>Cleaned Text</h2>
+                <div id="cleanedText" class="output"></div>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='script.js')}}"
+        ></script>
+    </body>
+</html>
+
+
+src\backend\app.py:
+import os
+from flask import Flask, render_template, request, jsonify
+# from unicode_invisible_cleaner.api import detect_invisible, clean_invisible
+from unicode_invisible_cleaner.detector import InvisibleTextDetector
+from unicode_invisible_cleaner.cleaner import InvisibleTextRemover
+from config import BASE_DIR
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "frontend"),
+    static_folder=os.path.join(BASE_DIR, "frontend", "static")
+)
+
+@app.route("/", methods=["GET"])
+def index():
+    return render_template("index.html")
+
+@app.route("/", methods=["POST"])
+def process_text():
+    text = request.form.get("text", "")
+
+    # Detect invisible characters
+    detector = InvisibleTextDetector()
+    detected_items = detector.detect(text)
+    print(detected_items)
+    # Highlight invisible characters in the original text
+    highlighted_text = text
+    for pos, char in detected_items:
+        # Wrap each invisible char in a span with class
+        highlighted_text = highlighted_text.replace(
+            char,
+            f'<span class="highlight">{char}></span'
+        )
+    
+    # Clean text
+    remover = InvisibleTextRemover()
+    cleaned_text = remover.clean(text)
+
+    return jsonify({
+        "highligheted": highlighted_text,
+        "cleaned": cleaned_text
+    })
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)
+
+
+
+requirements.txt:
+Flask==2.0.1
+Werkzeug==2.0.3 # compatible with Flask 2.0.1
+requests==2.25.1
+# regex==2021.4.4
+pytest==6.2.4
+black==21.5b1
+mypy==0.910
+
+
+config.py:
+import os
+
+INVISIBLE_CHARS = [
+            '\u200B',  # Zero Width Space
+            '\u200C',  # Zero Width Non-Joiner
+            '\u200D',  # Zero Width Joiner
+            '\u2060',  # Word Joiner
+            '\uFEFF',  # Zero Width No-Break Space
+            # Add more invisible characters as needed
+        ]
+
+BASE_DIR = os.getcwd() # BASE project directory

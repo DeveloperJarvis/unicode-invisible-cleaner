@@ -1,0 +1,7 @@
+Flask==2.0.1
+Werkzeug==2.0.3 # compatible with Flask 2.0.1
+requests==2.25.1
+# regex==2021.4.4
+pytest==6.2.4
+black==21.5b1
+mypy==0.910
